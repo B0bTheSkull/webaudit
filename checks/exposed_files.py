@@ -1,5 +1,8 @@
 """Check for exposed sensitive files."""
+import logging
 import requests
+
+logger = logging.getLogger(__name__)
 
 SENSITIVE_PATHS = [
     ("/.env", "HIGH", "Environment file with credentials/config"),
@@ -48,8 +51,8 @@ def check(base_url, session, timeout=10):
                         "description": description,
                         "detail": f"Sensitive file accessible: {path} (HTTP {r.status_code})"
                     })
-        except requests.RequestException:
-            pass
+        except requests.RequestException as exc:
+            logger.debug("Request for %s failed: %s", url, exc)
 
     # Check robots.txt for interesting paths
     robots_url = base_url + "/robots.txt"
@@ -71,7 +74,7 @@ def check(base_url, session, timeout=10):
                     "disallowed_paths": disallowed[:20],
                     "detail": f"robots.txt lists {len(disallowed)} Disallow entries — may reveal sensitive paths"
                 })
-    except requests.RequestException:
-        pass
+    except requests.RequestException as exc:
+        logger.debug("Request for %s failed: %s", robots_url, exc)
 
     return findings

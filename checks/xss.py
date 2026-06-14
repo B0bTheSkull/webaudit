@@ -1,6 +1,9 @@
 """XSS reflection and open redirect tests."""
+import logging
 import urllib.parse
 import requests
+
+logger = logging.getLogger(__name__)
 
 XSS_PAYLOAD = "WebAudit_XSS_TEST_abc123"
 REDIRECT_PAYLOAD = "https://example.com"
@@ -31,8 +34,8 @@ def check_xss(base_url, session, timeout=10):
                         "detail": f"Input reflected unencoded in response for param '{param}' — possible XSS",
                         "recommendation": "Encode all user input before reflecting in HTML output"
                     })
-            except requests.RequestException:
-                pass
+            except requests.RequestException as exc:
+                logger.debug("XSS probe request failed for %s: %s", test_url, exc)
     else:
         # Test each existing parameter
         for param in params:
@@ -51,8 +54,8 @@ def check_xss(base_url, session, timeout=10):
                         "detail": f"Input reflected unencoded for param '{param}' — possible XSS",
                         "recommendation": "Sanitize and encode all reflected user input"
                     })
-            except requests.RequestException:
-                pass
+            except requests.RequestException as exc:
+                logger.debug("XSS probe request failed for %s: %s", test_url, exc)
 
     return findings
 
@@ -78,7 +81,7 @@ def check_open_redirect(base_url, session, timeout=10):
                     "detail": f"Open redirect via '{param}' parameter — redirects to {location}",
                     "recommendation": "Validate redirect URLs against an allowlist of trusted destinations"
                 })
-        except requests.RequestException:
-            pass
+        except requests.RequestException as exc:
+            logger.debug("Open-redirect probe request failed for %s: %s", test_url, exc)
 
     return findings
