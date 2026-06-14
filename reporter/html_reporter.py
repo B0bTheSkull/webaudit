@@ -1,4 +1,5 @@
 """Generate self-contained HTML security report."""
+import html
 from datetime import datetime
 
 
@@ -46,6 +47,7 @@ def generate(url, findings, output_path):
     score = _severity_score(findings)
     score_color = _score_color(score)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    safe_url = html.escape(str(url))
 
     by_check = {}
     for f in findings:
@@ -60,7 +62,7 @@ def generate(url, findings, output_path):
 
     findings_html = ""
     for check_name, check_findings in by_check.items():
-        findings_html += f'<div class="check-section"><h3>{check_name.replace("_", " ").title()}</h3>'
+        findings_html += f'<div class="check-section"><h3>{html.escape(check_name.replace("_", " ").title())}</h3>'
         for f in check_findings:
             status = f.get("status", "INFO")
             severity = f.get("severity", "INFO")
@@ -73,16 +75,19 @@ def generate(url, findings, output_path):
                     continue
                 if isinstance(v, list):
                     v = ", ".join(str(i) for i in v[:10])
-                extra_rows += f'<tr><td class="key">{k.replace("_"," ").capitalize()}</td><td>{v}</td></tr>'
+                extra_rows += (
+                    f'<tr><td class="key">{html.escape(str(k).replace("_"," ").capitalize())}</td>'
+                    f'<td>{html.escape(str(v))}</td></tr>'
+                )
 
             findings_html += f"""
 <div class="finding" style="border-left: 4px solid {scolor};">
   <div class="finding-header">
-    <span class="badge" style="background:{scolor}">{status}</span>
-    <span class="sev-badge" style="background:{SEVERITY_COLORS.get(severity,'#868e96')}">{severity}</span>
-    <span class="finding-detail">{detail}</span>
+    <span class="badge" style="background:{scolor}">{html.escape(str(status))}</span>
+    <span class="sev-badge" style="background:{SEVERITY_COLORS.get(severity,'#868e96')}">{html.escape(str(severity))}</span>
+    <span class="finding-detail">{html.escape(str(detail))}</span>
   </div>
-  {"<div class='recommendation'>💡 " + recommendation + "</div>" if recommendation else ""}
+  {"<div class='recommendation'>💡 " + html.escape(str(recommendation)) + "</div>" if recommendation else ""}
   {f"<table class='meta'>{extra_rows}</table>" if extra_rows else ""}
 </div>"""
         findings_html += "</div>"
@@ -92,7 +97,7 @@ def generate(url, findings, output_path):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebAudit Report — {url}</title>
+<title>WebAudit Report — {safe_url}</title>
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{ font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; }}
@@ -123,7 +128,7 @@ def generate(url, findings, output_path):
 <div class="container">
   <header>
     <h1>WebAudit Security Report</h1>
-    <div class="url">{url}</div>
+    <div class="url">{safe_url}</div>
     <div class="meta">Generated: {now}</div>
     <div class="score-ring">{score}/100</div>
     <div class="stats">
