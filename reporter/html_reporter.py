@@ -92,7 +92,7 @@ def generate(url, findings, output_path):
 </div>"""
         findings_html += "</div>"
 
-    html = f"""<!DOCTYPE html>
+    document = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -144,4 +144,4 @@ def generate(url, findings, output_path):
 </html>"""
 
     with open(output_path, "w") as f:
-        f.write(html)
+        f.write(document)
